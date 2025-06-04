@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -202,6 +204,20 @@ func (h *Hero) status() {
 	fmt.Printf("Имя:%s\nЗдоровье:%d\nЛокация:%s\n", h.Name, h.Health, h.Location)
 }
 
+func SaveGame(state *GameState) {
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		log.Println("Ошибка при сохранении:", err)
+		return
+	}
+	err = os.WriteFile("save.json", data, 0644)
+	if err != nil {
+		log.Println("Ошибка записи в файл:", err)
+	} else {
+		fmt.Println("💾 Игра сохранена.")
+	}
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
@@ -312,14 +328,17 @@ func main() {
 			}
 
 			hero.AddItem(newItem)
+			SaveGame(&GameState{Hero: hero, Enemies: enemies})
 		case 7:
 			fmt.Print("Куда переместиться? ")
 			location, _ := reader.ReadString('\n')
 			location = strings.TrimSpace(location)
 			hero.moveTo(location)
+			SaveGame(&GameState{Hero: hero, Enemies: enemies})
 		case 8:
 			hero.UsePotion()
 		case 9:
+			SaveGame(&GameState{Hero: hero, Enemies: enemies})
 			fmt.Println("Выход из игры.")
 			return
 		default:
