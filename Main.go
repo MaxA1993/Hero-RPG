@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -228,12 +229,17 @@ func main() {
 		fmt.Println("7 - Переместиться")
 		fmt.Println("8 - Использовать зелье")
 		fmt.Println("9 - Выйти из игры")
+		fmt.Print("Введите номер действия: ")
+		choiceStr, _ := reader.ReadString('\n')
+		choiceStr = strings.TrimSpace(choiceStr)
+		choiceInt, err := strconv.Atoi(choiceStr)
+		if err != nil || choiceInt < 1 || choiceInt > 9 {
+			fmt.Println("Ошибка: введите число от 1 до 9.")
+			continue
+		}
 
-		choice, _ := reader.ReadString('\n')
-		choice = strings.TrimSpace(choice)
-
-		switch choice {
-		case "1":
+		switch choiceInt {
+		case 1:
 			if len(enemies) == 0 {
 				fmt.Println("Врагов больше нет!")
 				continue
@@ -243,10 +249,11 @@ func main() {
 				fmt.Printf("%d: %s (HP: %d)\n", i+1, enemy.Name, enemy.Health)
 			}
 			fmt.Print("Выберите врага по номеру: ")
-			var index int
-			fmt.Scanln(&index)
-			if index <= 0 || index > len(enemies) {
-				fmt.Println("Неверный выбор врага.")
+			indexStr, _ := reader.ReadString('\n')
+			indexStr = strings.TrimSpace(indexStr)
+			index, err := strconv.Atoi(indexStr)
+			if err != nil || index < 1 || index > len(enemies) {
+				fmt.Println("Некорректный выбор врага.Введите числоот 1 до", len(enemies))
 				continue
 			}
 			selected := &enemies[index-1]
@@ -256,19 +263,19 @@ func main() {
 				enemies = append(enemies[:index-1], enemies[index:]...)
 				hero.gainXP(50)
 			}
-		case "2":
+		case 2:
 			if len(enemies) == 0 {
 				fmt.Println("Нет врагов для применения способности.")
 				continue
 			}
 			hero.UseSpecial(&enemies[0]) // применяет к первому врагу
-		case "3":
+		case 3:
 			hero.heal(30)
-		case "4":
+		case 4:
 			hero.status()
-		case "5":
+		case 5:
 			hero.ShowInventory()
-		case "6":
+		case 6:
 			fmt.Print("Введите имя предмета: ")
 			itemName, _ := reader.ReadString('\n')
 			itemName = strings.TrimSpace(itemName)
@@ -289,12 +296,12 @@ func main() {
 				continue
 			}
 
-			var itemValue int
 			fmt.Print("Введите значение предмета (число): ")
-			_, err := fmt.Scanln(&itemValue)
+			valueStr, _ := reader.ReadString('\n')
+			valueStr = strings.TrimSpace(valueStr)
+			itemValue, err := strconv.Atoi(valueStr)
 			if err != nil {
-				fmt.Println("Ошибка ввода значения. Введите число.")
-				reader.ReadString('\n') // очистка ввода
+				fmt.Println("Ошибка ввода. Введите корректное число.")
 				continue
 			}
 
@@ -305,14 +312,14 @@ func main() {
 			}
 
 			hero.AddItem(newItem)
-		case "7":
+		case 7:
 			fmt.Print("Куда переместиться? ")
 			location, _ := reader.ReadString('\n')
 			location = strings.TrimSpace(location)
 			hero.moveTo(location)
-		case "8":
+		case 8:
 			hero.UsePotion()
-		case "9":
+		case 9:
 			fmt.Println("Выход из игры.")
 			return
 		default:
