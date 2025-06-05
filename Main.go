@@ -22,6 +22,7 @@ type Hero struct {
 	AttackPower    int
 	EquippedWeapon *Item
 	EquippedArmor  *Item
+	ActiveQuest    []Quest
 }
 
 type Enemy struct {
@@ -39,6 +40,16 @@ type Item struct {
 	Name  string
 	Type  string
 	Value int
+}
+type Quest struct {
+	ID          int
+	Description string
+	GoalType    string
+	Target      string
+	Required    int
+	Progress    int
+	RewardXP    int
+	Completed   bool
 }
 
 func ChooseClass() string {
@@ -68,6 +79,23 @@ func ChooseHero(name string, class string) *Hero {
 	hero.Location = "Начальная локация"
 	return &hero
 }
+func (h *Hero) CheckQuestProgress(eventType, target string) {
+	for i := range h.ActiveQuest {
+		quest := &h.ActiveQuest[i]
+		if quest.Completed {
+			continue
+		}
+		if quest.GoalType == eventType && quest.Target == target {
+			quest.Progress++
+			fmt.Printf("📜 Прогресс по квесту: %s (%d/%d)\n", quest.Description, quest.Progress, quest.Required)
+			if quest.Progress >= quest.Required {
+				quest.Completed = true
+				fmt.Println("✅ Квест завершён:", quest.Description)
+				h.gainXP(quest.RewardXP)
+			}
+		}
+	}
+}
 
 func (h *Hero) UseSpecial(enemy *Enemy) {
 	if h.Class == "Воин" {
@@ -96,6 +124,8 @@ func (h *Hero) gainXP(amount int) {
 func (h *Hero) moveTo(location string) {
 	h.Location = location
 	fmt.Println(h.Name, "переместился в", location)
+
+	h.CheckQuestProgress("travel", location)
 }
 
 func (h *Hero) takeDamage(amount int) {
@@ -127,6 +157,8 @@ func (h *Hero) Attack(enemy *Enemy, damage int) {
 	if enemy.Health <= 0 {
 		enemy.Health = 0
 		fmt.Println(enemy.Name, "побежден")
+
+		h.CheckQuestProgress("kill", enemy.Name)
 	} else if enemy.Health != 0 {
 		damage := rand.Intn(20) + 10
 		fmt.Println(enemy.Name, "атакует", h.Name)
@@ -227,6 +259,14 @@ func main() {
 
 	class := ChooseClass()
 	hero := ChooseHero(name, class)
+	hero.ActiveQuest = append(hero.ActiveQuest, Quest{
+		ID:          1,
+		Description: "Убей 3 гоблинов",
+		GoalType:    "kill",
+		Target:      "Гоблин",
+		Required:    3,
+		RewardXP:    100,
+	})
 
 	enemies := []Enemy{
 		{Name: "Гоблин", Health: 60},
@@ -244,7 +284,8 @@ func main() {
 		fmt.Println("6 - Добавить предмет")
 		fmt.Println("7 - Переместиться")
 		fmt.Println("8 - Использовать зелье")
-		fmt.Println("9 - Выйти из игры")
+		fmt.Println("9 - Показать активные квесты")
+		fmt.Println("10 - Выйти из игры")
 		fmt.Print("Введите номер действия: ")
 		choiceStr, _ := reader.ReadString('\n')
 		choiceStr = strings.TrimSpace(choiceStr)
@@ -338,6 +379,15 @@ func main() {
 		case 8:
 			hero.UsePotion()
 		case 9:
+			if len(hero.ActiveQuest) == 0 {
+				fmt.Println("Нет активных квестов.")
+			} else {
+				fmt.Println("🎯 Активные квесты:")
+				for _, q := range hero.ActiveQuest {
+					fmt.Printf("- %s (%s): %d/%d\n", q.Description, q.GoalType, q.Progress, q.Required)
+				}
+			}
+		case 10:
 			SaveGame(&GameState{Hero: hero, Enemies: enemies})
 			fmt.Println("Выход из игры.")
 			return
